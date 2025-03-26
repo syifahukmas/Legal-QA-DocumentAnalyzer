@@ -35,7 +35,7 @@ Langkah-langkah instalasi proyek:
     ```
 2. Masuk ke direktori proyek:
     ```bash
-    cd law-tracking-streamlit
+    cd legal-QA-DocumentAnalyzer
     ```
 3. Install dependensi yang diperlukan:
     ```bash
