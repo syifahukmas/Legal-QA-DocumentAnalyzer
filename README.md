@@ -23,7 +23,6 @@ Proyek ini membuat sebuah dashboard interaktif yang dikembangkan dengan Streamli
 Daftar kebutuhan sistem untuk menjalankan proyek ini:
 - Python versi 3.9 atau lebih tinggi
 - Pandas
-- Plotly
 - re
 
 ## Instalasi
