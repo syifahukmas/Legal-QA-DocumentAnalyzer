@@ -1,4 +1,4 @@
-# LangChain Streamlit Interface with Typesense
+# Legal Q&A and Document Analyzer
 
 Proyek ini membuat sebuah dashboard interaktif yang dikembangkan dengan Streamlit untuk memvisualisasikan perubahan dalam peraturan perundang-undangan (UU) yang terdapat di JDIH Kementerian Energi dan Sumber Daya Mineral (KESDM). Dashboard ini menampilkan alur perubahan UU menggunakan diagram Sankey yang intuitif, memungkinkan user untuk melihat alur revisi atau pencabutan UU dari waktu ke waktu.
 
@@ -31,7 +31,7 @@ Daftar kebutuhan sistem untuk menjalankan proyek ini:
 Langkah-langkah instalasi proyek:
 1. Clone repositori:
     ```bash
-    git clone https://github.com/syifahukmas/law-tracking-streamlit.git
+    git clone https://github.com/syifahukmas/legal-QA-DocumentAnalyzer
     ```
 2. Masuk ke direktori proyek:
     ```bash
