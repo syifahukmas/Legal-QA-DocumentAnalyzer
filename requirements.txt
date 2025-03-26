@@ -12,8 +12,10 @@ plotly==5.24.1
 # API
 
 # Machine Learning
+tiktoken==0.5.2  # Untuk tokenisasi dalam LangChain
+pypdf==4.2.0  # Untuk membaca file PDF
 
 # Other Libraries
 langchain==0.0.340
 chromadb==0.4.22
-
+langchain_community  # Untuk import Chroma dengan `from langchain_community.vectorstores import Chroma`
