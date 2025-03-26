@@ -3,7 +3,7 @@ typesense==0.21.0
 scipy==1.11.4
 python-dotenv==1.0.1
 jsonschema==4.23.0
-numpy==2.0.2
+numpy==1.26.3
 requests==2.32.3
 langchain==0.3.7
 langchain-chroma==0.1.4
