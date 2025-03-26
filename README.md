@@ -45,7 +45,7 @@ Langkah-langkah instalasi proyek:
 
 To run the dashboard:
 ```bash
-streamlit run app.py
+streamlit run main.py
 ```
 
 ## Struktur Proyek
