@@ -2,6 +2,8 @@
 
 Proyek ini membuat sebuah dashboard interaktif yang dikembangkan dengan Streamlit untuk memvisualisasikan perubahan dalam peraturan perundang-undangan (UU) yang terdapat di JDIH Kementerian Energi dan Sumber Daya Mineral (KESDM). Dashboard ini menampilkan alur perubahan UU menggunakan diagram Sankey yang intuitif, memungkinkan user untuk melihat alur revisi atau pencabutan UU dari waktu ke waktu.
 
+![Document Analyzer](legal.png)
+
 ## Daftar Isi
 - [Fitur](#fitur)
 - [Persyaratan Sistem](#persyaratan-sistem)
