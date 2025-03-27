@@ -18,91 +18,45 @@ import numpy as np
 from scipy.spatial.distance import cosine
 import re
 
-SYSTEM_CREATE_CHUNK_CONTEXT = """
-    You are an advanced Retrieval-Augmented Generation assistant tasked with processing and organizing legal documents into structured and coherent chunks.
+def create_llm(api_key):
+    """Membuat instance LLM dengan API key yang diberikan"""
+    if not api_key:
+        raise ValueError("API Key is required")
 
-    ### Instructions:
-    1. **You will be provided with**:
-    - **Superheader:** The overarching context and theme of the document.
-    - **Previous Context:** The context summary generated from preceding chunks.
-    - **Current Chunk:** A new excerpt from the document represented as a JSON element, containing hierarchical and descriptive information. The chunk may include:
-            - Title of the document (judul_dokumen)
-            - Regulation number (nomor_peraturan)
-            - Chapter information (bab)
-            - Chapter title (judul_bab)
-            - Section title (judul_bagian)
-            - Article number (pasal)
-            - Content (konten)
-
-    2. **Hierarchy Extraction**:
-    - Identify the structure of the document based on the JSON keys:
-            - judul_dokumen: Overall title of the document.
-            - nomor_peraturan: Regulation number or identifier.
-            - bab: Chapter number.
-            - judul_bab: Title of the chapter.
-            - judul_bagian: Title of the section within a chapter.
-            - pasal: Article number or identifier.
-        - Clearly delineate the boundaries of each hierarchy.
-
-    3. **Content Chunking**:
-    - For each identified section (BAB or Pasal), extract its content using the chunk structure.
-    - Include relevant context such as the chapter, section, or previous content for continuity.
-    - Include all non-null fields in the summary:
-            - If a field is null, exclude it from the summary.
-            - Use a logical, human-readable format to present the information in the output.
-
-    4. **Contextual Analysis**:
-    - Combine relevant details from the superheader, the hierarchy, and the content of the current chunk.
-    - Maintain logical flow between chunks by leveraging the previous context and overarching themes.
-    - Analyze the **current chunk** to extract its main ideas and integrate them into a concise, coherent context.
-    - Ensure that the generated context reflects the document's overall theme and maintains logical flow.
-    - Avoid introducing information outside the provided content.
-    - Answer in markdown format and in Bahasa Indonesia.
-
-    5. **Output Format**:
-    - Use the following markdown format to present each chunk:
-
-    ### Hubungan dengan Konteks Sebelumnya:
-        <Insert the concise context for the current chunk here. Focus on identifying and describing the relationship between the current article (pasal) and the previous context (bab, bagian, or document-level theme). Indicate whether the current chunk belongs to the same chapter, section, or regulation as the previous context, and highlight any transitions or connections. Avoid repeating detailed content summaries.>
-
-    ### Ringkasan Konten:
-    <Content Summary in paragraph form. Prioritize mentioning the article first, must be followed by information such as judul_dokumen, nomor_peraturan, bab, judul_bagian, and finally the explanation of the article>
-
-    Answer strictly in the format provided.
-    """
-
-USER_CREATE_CHUNK_CONTEXT = """
-    Saya akan memberikan superheader, konteks sebelumnya, dan potongan text dari sebuah dokumen berbahasa Indonesia.
-    Berikut adalah informasi yang saya berikan:
-
-    -- Superheader --
-    {superheader}
-
-    -- Konteks Sebelumnya --
-    {previous_context}
-
-    -- Text saat ini --
-    {current_chunk}
-    """
-
-API_KEY = os.getenv("OPENAI_API_KEY")
-
-llm = ChatOpenAI(
-        api_key=API_KEY,
+    return ChatOpenAI(
+        api_key=api_key,
         model="gpt-4o-mini",
         temperature=0,
         max_retries=2,
         timeout=120,
     )
 
-prompt = ChatPromptTemplate(
+def create_chain(api_key):
+    """Membuat pipeline LLM dengan API key yang diberikan"""
+    llm = create_llm(api_key)  # Membuat instance LLM dengan API key
+
+    SYSTEM_CREATE_CHUNK_CONTEXT = """
+    You are an advanced Retrieval-Augmented Generation assistant for Legal Understanding.
+    Your role is to process document chunks while maintaining context coherence and relevance.
+    """
+    
+    USER_CREATE_CHUNK_CONTEXT = """
+    Berikut adalah potongan teks dari dokumen yang perlu diringkas atau dianalisis:
+    
+    {text}
+    """
+
+    # Menyiapkan template prompt
+    prompt = ChatPromptTemplate(
         [
             ("system", SYSTEM_CREATE_CHUNK_CONTEXT),
             ("user", USER_CREATE_CHUNK_CONTEXT),
         ]
     )
 
-chain = prompt | llm
+    # Menghubungkan prompt dengan model LLM
+    chain = prompt | llm
+    return chain
 
 def chunk_document(doc,judul_dokumen):
     chunks = []
@@ -233,11 +187,11 @@ def create_superheader_context(text, api_key, raw_text):
     {text}
     """
 
-    load_dotenv()
-    API_KEY = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("API Key is required")
 
     llm = ChatOpenAI(
-        api_key=API_KEY,
+        api_key=api_key,
         model="gpt-4o-mini",
         temperature=0,
         max_retries=2,
@@ -276,20 +230,23 @@ def add_chunk_with_embedding(client, chunk_id, superheader, previous_context):
     except Exception as e:
         print(f"Error menambahkan chunk {chunk_id}: {e}")
 
-def process_text_in_chunks(client, chunks_list, result):
+import streamlit as st
+
+def process_text_in_chunks(client, chunks_list, result, chain):
+    """Memproses teks dalam bentuk chunks menggunakan LLM dan menyimpannya ke Typesense."""
+    
     all_summaries = []
     previous_context = "-"  # Konteks awal
-    end_pos = len(chunks_list)  # Panjang teks
+    end_pos = len(chunks_list)  # Total jumlah chunks
 
-    # Inisialisasi Streamlit progress bar
+    # Inisialisasi progress bar Streamlit
     progress_text = "Processing chunks. Please wait..."
-    progress_bar = st.progress(0, text=progress_text)
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-    for i in range(end_pos):
-        current_chunk = chunks_list[i]  # Ambil chunk saat ini
-
-        # Invoke LLM untuk memproses chunk saat ini
+    for i, current_chunk in enumerate(chunks_list):
         try:
+            # Invoke LLM untuk memproses chunk saat ini
             chunk_context = chain.invoke(
                 input={
                     "superheader": result,
@@ -298,15 +255,19 @@ def process_text_in_chunks(client, chunks_list, result):
                 }
             ).content
         except Exception as e:
-            print(f"Error memproses chunk pada posisi {i}: {e}")
+            st.error(f"⚠️ Error memproses chunk pada posisi {i}: {e}")
             continue
 
         # Membuat ID unik untuk chunk
-        judul = chunks_list[0].get("nomor_peraturan", "")
+        judul = chunks_list[0].get("nomor_peraturan", "unknown_id")  # Gunakan default "unknown_id" jika tidak ada
         chunk_id = f"{judul}_{i+1}"
 
         # Tambahkan chunk dengan embedding ke Typesense
-        add_chunk_with_embedding(client, chunk_id, result, previous_context)
+        try:
+            add_chunk_with_embedding(client, chunk_id, result, previous_context)
+        except Exception as e:
+            st.error(f"⚠️ Gagal menambahkan chunk ke Typesense pada posisi {i}: {e}")
+            continue
 
         # Simpan rangkuman dan perbarui konteks sebelumnya
         all_summaries.append(chunk_context)
@@ -314,10 +275,12 @@ def process_text_in_chunks(client, chunks_list, result):
 
         # Perbarui progress bar
         percentage = int(((i + 1) / end_pos) * 100)
-        progress_bar.progress(percentage, text=f"{progress_text} ({percentage}%)")
+        progress_bar.progress((i + 1) / end_pos)
+        status_text.text(f"{progress_text} ({percentage}%)")
 
     # Selesaikan progress bar
-    progress_bar.progress(100, text="Document processed into chunks successfully!")
+    progress_bar.progress(1.0)
+    status_text.text("✅ Document processed into chunks successfully!")
 
     return all_summaries
 

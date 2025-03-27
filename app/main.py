@@ -5,7 +5,7 @@ from langchain.chains import RetrievalQA
 from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from langchain_unstructured import UnstructuredLoader
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
@@ -16,10 +16,10 @@ import json
 from langchain_core.prompts import ChatPromptTemplate
 import numpy as np
 from scipy.spatial.distance import cosine
-from utils import chunk_document, create_superheader_context, process_text_in_chunks, hybrid_search
+from utils import chunk_document, create_superheader_context, process_text_in_chunks, hybrid_search, create_llm, create_chain
 
-# Load environment variables
-load_dotenv()
+# # Load environment variables
+# load_dotenv()
 
 upload_directory = "uploads"
 
@@ -35,7 +35,13 @@ def main():
     uploaded_file = None # tambahan 1/7/2025
     
     if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key
+        try:
+            llm = create_llm(api_key)
+            st.success("✅ API Key berhasil digunakan!")
+        except ValueError as e:
+            st.error(f"⚠️ Error: {e}")
+    else:
+        st.warning("⚠️ Masukkan OpenAI API Key untuk melanjutkan.")
 
     # Initialize Typesense client
     if typesense_api_key and typesense_host:
